@@ -1,0 +1,10 @@
+<resources>
+    <dimen name="fab_margin">16dp</dimen>
+    <integer name="num_colums">2</integer>
+    <dimen name="loading_pb_size">64dp</dimen>
+    <dimen name="poster_width">160dp</dimen>
+    <dimen name="screen_padding">16dp</dimen>
+    <dimen name="short_margin">8dp</dimen>
+    <dimen name="regular_margin">16dp</dimen>
+    <dimen name="large_margin">32dp</dimen>
+</resources>

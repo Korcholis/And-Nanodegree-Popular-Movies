@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Pop Movies</string>
+    <string name="title_activity_list">@string/app_name</string>
+    <string name="loading_title">Loading…</string>
+    <string name="title_activity_detail">Movie</string>
+    <string name="movie_poster">Movie poster</string>
+    <string name="error_movie_not_exists">Sorry, but that movie doesn\'t exist at all</string>
+    <string name="error_movies_wrong_data">Sorry, but the movies couldn\'t be opened</string>
+    <string name="error_no_connection">Internet is not available</string>
+    <string name="movie_rating_out_of">%1$s/10</string>
+    <string name="sub_highest_rated">Highest rated movies</string>
+    <string name="sub_popular">Most popular movies</string>
+    <string name="menu_refresh">Refresh</string>
+    <string name="menu_sort">Sort by…</string>
+    <string name="menu_sort_highest_rated">Sort by rating</string>
+    <string name="menu_sort_popular">Sort by popularity</string>
+    <string name="tmdb_date_format">yyyy-MM-dd</string>
+    <string name="human_date_format">MMMM dd, yyyy</string>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/loadingPb"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorPrimaryLight"
+    android:visibility="gone"
+    tools:showIn="@layout/content_detail">
+
+    <ProgressBar
+        android:layout_width="@dimen/loading_pb_size"
+        android:layout_height="@dimen/loading_pb_size"
+        android:layout_gravity="center"
+        android:indeterminate="true" />
+</FrameLayout>
