@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/option_details"
+        android:icon="@drawable/ic_movie_24dp"
+        android:title="@string/page_details" />
+    <item
+        android:id="@+id/option_trailers"
+        android:icon="@drawable/ic_new_releases_24dp"
+        android:title="@string/page_videos" />
+    <item
+        android:id="@+id/option_reviews"
+        android:icon="@drawable/ic_rate_review_24dp"
+        android:title="@string/page_reviews" />
+</menu>

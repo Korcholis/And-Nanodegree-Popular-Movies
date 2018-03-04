@@ -13,7 +13,11 @@
     <string name="menu_refresh">Refresh</string>
     <string name="menu_sort">Sort by…</string>
     <string name="menu_sort_highest_rated">Sort by rating</string>
+    <string name="menu_show_favs">Favorites only</string>
     <string name="menu_sort_popular">Sort by popularity</string>
     <string name="tmdb_date_format">yyyy-MM-dd</string>
     <string name="human_date_format">MMMM dd, yyyy</string>
+    <string name="page_details">Details</string>
+    <string name="page_videos">Videos</string>
+    <string name="page_reviews">Reviews</string>
 </resources>

@@ -1,4 +1,4 @@
-package com.korcholis.popularmovies.utils;
+package com.korcholis.popularmovies.adapters;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
@@ -11,11 +11,11 @@ import android.widget.TextView;
 import com.github.florent37.picassopalette.PicassoPalette;
 import com.korcholis.popularmovies.R;
 import com.korcholis.popularmovies.models.Movie;
+import com.korcholis.popularmovies.utils.DynamicSizeUtils;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
-import butterknife.BindDimen;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 

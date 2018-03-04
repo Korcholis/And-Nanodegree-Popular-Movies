@@ -2,7 +2,9 @@ package com.korcholis.popularmovies.models;
 
 import com.google.gson.annotations.SerializedName;
 
-public class Movie {
+import java.io.Serializable;
+
+public class Movie implements Serializable {
     private static final String TMDB_IMAGE_URL = "http://image.tmdb.org/t/p/w185/";
 
     @SerializedName("id")

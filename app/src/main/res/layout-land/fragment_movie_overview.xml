@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v4.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/screen_padding"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <android.support.v7.widget.CardView
+            android:id="@+id/posterWrapper"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toStartOf="@+id/ratingTv"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/posterIv"
+                android:layout_width="@dimen/poster_width"
+                android:layout_height="@dimen/poster_width"
+                android:contentDescription="@string/movie_poster" />
+        </android.support.v7.widget.CardView>
+
+        <TextView
+            android:id="@+id/ratingTv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/regular_margin"
+            android:layout_marginEnd="@dimen/short_margin"
+            android:textAlignment="textEnd"
+            android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@+id/starIv"
+            app:layout_constraintStart_toEndOf="@+id/posterWrapper"
+            app:layout_constraintTop_toBottomOf="@+id/releaseTitleTv" />
+
+        <TextView
+            android:id="@+id/releaseTv"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/large_margin"
+            android:layout_marginEnd="@dimen/short_margin"
+            android:textAlignment="textEnd"
+            android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large"
+            app:layout_constraintBottom_toTopOf="@+id/ratingTv"
+            app:layout_constraintEnd_toStartOf="@+id/calendarIv"
+            app:layout_constraintStart_toEndOf="@+id/starIv"
+            app:layout_constraintTop_toBottomOf="@+id/ratingTv" />
+
+        <ImageView
+            android:id="@+id/starIv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toTopOf="@+id/ratingTv"
+            app:layout_constraintEnd_toStartOf="@+id/releaseTv"
+            app:layout_constraintStart_toEndOf="@+id/ratingTv"
+            app:layout_constraintTop_toBottomOf="@+id/ratingTv"
+            app:srcCompat="@drawable/ic_star_half_24dp" />
+
+        <TextView
+            android:id="@+id/synopsisTv"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/regular_margin"
+            android:layout_marginTop="@dimen/large_margin"
+            android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/posterWrapper"
+            app:layout_constraintTop_toBottomOf="@+id/ratingTv" />
+
+        <ImageView
+            android:id="@+id/calendarIv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toTopOf="@+id/releaseTv"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/releaseTv"
+            app:layout_constraintTop_toBottomOf="@+id/releaseTv"
+            app:srcCompat="@drawable/ic_today_24dp" />
+
+        <TextView
+            android:id="@+id/releaseTitleTv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Release date"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="@+id/releaseTv"
+            app:layout_constraintTop_toTopOf="parent" />
+    </android.support.constraint.ConstraintLayout>
+</android.support.v4.widget.NestedScrollView>

@@ -13,6 +13,9 @@
         app:showAsAction="ifRoom|withText">
         <menu>
             <item
+                android:id="@+id/showFavs"
+                android:title="@string/menu_show_favs" />
+            <item
                 android:id="@+id/sortPopularity"
                 android:title="@string/menu_sort_popular" />
             <item

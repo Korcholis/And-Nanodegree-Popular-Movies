@@ -18,7 +18,7 @@ import com.korcholis.popularmovies.models.MoviesList;
 import com.korcholis.popularmovies.utils.ConnectionChecker;
 import com.korcholis.popularmovies.utils.Constants;
 import com.korcholis.popularmovies.utils.MoviesActivity;
-import com.korcholis.popularmovies.utils.MoviesAdapter;
+import com.korcholis.popularmovies.adapters.MoviesAdapter;
 import com.korcholis.popularmovies.data.TMDbApi;
 
 import java.util.ArrayList;
