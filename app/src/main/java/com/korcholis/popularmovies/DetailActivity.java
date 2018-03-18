@@ -1,5 +1,10 @@
 package com.korcholis.popularmovies;
 
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -9,10 +14,15 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import com.github.zagum.switchicon.SwitchIconView;
+import com.korcholis.popularmovies.data.PopDBContract;
+import com.korcholis.popularmovies.data.PopDBHelper;
 import com.korcholis.popularmovies.data.TMDbApi;
 import com.korcholis.popularmovies.exceptions.ConnectionNotAvailableException;
 import com.korcholis.popularmovies.fragments.OverviewFragment;
@@ -24,6 +34,9 @@ import com.korcholis.popularmovies.utils.MoviesActivity;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Consumer;
@@ -44,10 +57,41 @@ public class DetailActivity extends MoviesActivity implements OverviewFragment.O
     ViewPager pager;
 
     private Movie movie;
-    private ScreensAdapter screensAdapter;
+    final Observable<Void> setFavObservable = Observable.create(new ObservableOnSubscribe<Void>() {
+        @Override
+        public void subscribe(ObservableEmitter<Void> emitter) {
+            ContentValues cv = new ContentValues();
+            cv.put(PopDBContract.FavEntry.COLUMN_MOVIE_ID, movie.getId());
+            cv.put(PopDBContract.FavEntry.COLUMN_TITLE, movie.getTitle());
+            cv.put(PopDBContract.FavEntry.COLUMN_POSTER, movie.getPoster(true));
+            ContentResolver resolver = getContentResolver();
+            resolver.insert(PopDBContract.FavEntry.CONTENT_URI, cv);
 
+            emitter.onComplete();
+        }
+    });
+    final Observable<Void> unsetFavObservable = Observable.create(new ObservableOnSubscribe<Void>() {
+        @Override
+        public void subscribe(ObservableEmitter<Void> emitter) {
+            ContentResolver resolver = getContentResolver();
+            resolver.delete(ContentUris.withAppendedId(PopDBContract.FavEntry.CONTENT_URI, movieId), null, null);
+            emitter.onComplete();
+        }
+    });
+    private int movieId;
+    final Observable<Boolean> getFavObservable = Observable.create(new ObservableOnSubscribe<Boolean>() {
+        @Override
+        public void subscribe(ObservableEmitter<Boolean> emitter) {
+            ContentResolver resolver = getContentResolver();
+            Cursor cursor = resolver.query(ContentUris.withAppendedId(PopDBContract.FavEntry.CONTENT_URI, movieId), null, null, null, null);
+            emitter.onNext(cursor.getCount() > 0);
+            emitter.onComplete();
+        }
+    });
+    private ScreensAdapter screensAdapter;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
     private MenuItem prevMenuItem;
+    private SwitchIconView favBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +106,7 @@ public class DetailActivity extends MoviesActivity implements OverviewFragment.O
         getSupportActionBar().setTitle(R.string.loading_title);
         getSupportActionBar().setSubtitle(R.string.page_details);
 
-        int movieId = getIntent().getIntExtra(Constants.PARAM_MOVIE_ID, Constants.DEFAULT_MOVIE_ID);
+        movieId = getIntent().getIntExtra(Constants.PARAM_MOVIE_ID, Constants.DEFAULT_MOVIE_ID);
 
         if (movieId == Constants.DEFAULT_MOVIE_ID) {
             showMovieErrorToast(true);
@@ -118,9 +162,7 @@ public class DetailActivity extends MoviesActivity implements OverviewFragment.O
 
                 if (prevMenuItem != null) {
                     prevMenuItem.setChecked(false);
-                }
-                else
-                {
+                } else {
                     bottomNavBar.getMenu().getItem(0).setChecked(false);
                 }
 
@@ -163,6 +205,67 @@ public class DetailActivity extends MoviesActivity implements OverviewFragment.O
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_content, menu);
+
+        favBtn = menu.findItem(R.id.fav_switch_layout).getActionView().findViewById(R.id.fav_btn);
+        compositeDisposable.add(
+                getFavObservable
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Consumer<Boolean>() {
+                            @Override
+                            public void accept(Boolean isFav) {
+                                favBtn.setIconEnabled(isFav);
+                            }
+                        }, new Consumer<Throwable>() {
+                            @Override
+                            public void accept(Throwable throwable) {
+                                if (throwable instanceof ConnectionNotAvailableException) {
+                                    showNoConnectionErrorToast(true);
+                                } else {
+                                    showMovieErrorToast(true);
+                                }
+                            }
+                        }));
+
+
+        favBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final boolean willBeFaved = !favBtn.isIconEnabled();
+                favBtn.switchState();
+
+                Observable<Void> observableToUse;
+                if (willBeFaved) {
+                    observableToUse = setFavObservable;
+                } else {
+                    observableToUse = unsetFavObservable;
+                }
+
+                compositeDisposable.add(
+                        observableToUse
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(new Consumer<Void>() {
+                                    @Override
+                                    public void accept(Void aVoid) throws Exception {
+
+                                    }
+                                }, new Consumer<Throwable>() {
+                                    @Override
+                                    public void accept(Throwable throwable) {
+                                        favBtn.switchState();
+                                    }
+                                })
+                );
+            }
+        });
+        return true;
+    }
+
+    @Override
     public void onOverviewInteraction(Uri uri) {
 
     }
@@ -178,10 +281,10 @@ public class DetailActivity extends MoviesActivity implements OverviewFragment.O
     }
 
     public static class ScreensAdapter extends FragmentPagerAdapter {
-        private static final int NUM_ITEMS = 3;
         public static final int POS_OVERVIEW = 0;
         public static final int POS_VIDEOS = 1;
         public static final int POS_REVIEWS = 2;
+        private static final int NUM_ITEMS = 3;
         private Movie movie;
 
         public ScreensAdapter(FragmentManager fm, Movie theMovie) {

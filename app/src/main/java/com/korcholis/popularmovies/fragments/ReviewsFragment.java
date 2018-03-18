@@ -10,6 +10,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 
 import com.korcholis.popularmovies.R;
 import com.korcholis.popularmovies.adapters.ReviewsAdapter;
@@ -48,6 +49,10 @@ public class ReviewsFragment extends Fragment {
 
     @BindView(R.id.list)
     RecyclerView reviewsList;
+    @BindView(R.id.empty_layout)
+    View emptyLayout;
+    @BindView(R.id.loadingPb)
+    ProgressBar loadingPb;
 
     private ReviewsAdapter adapter;
 
@@ -75,7 +80,7 @@ public class ReviewsFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_list, container, false);
+        View view = inflater.inflate(R.layout.fragment_reviews_list, container, false);
         ButterKnife.bind(this, view);
         return view;
     }
@@ -103,7 +108,7 @@ public class ReviewsFragment extends Fragment {
 
         adapter = new ReviewsAdapter(getContext());
         reviewsList.setAdapter(adapter);
-
+        showLoading();
         compositeDisposable.add(
                 TMDbApi.instance(getContext()).reviewsForMovie(movieId)
                         .subscribeOn(Schedulers.io())
@@ -125,7 +130,9 @@ public class ReviewsFragment extends Fragment {
                                 } else {
                                     adapter.swapContent(reviews);
                                     if (reviews.isEmpty()) {
+                                        showEmpty();
                                     } else {
+                                        showList();
                                     }
                                 }
                             }
@@ -149,6 +156,24 @@ public class ReviewsFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         mListener = null;
+    }
+
+    private void showLoading() {
+        loadingPb.setVisibility(View.VISIBLE);
+        reviewsList.setVisibility(View.GONE);
+        emptyLayout.setVisibility(View.GONE);
+    }
+
+    private void showList() {
+        loadingPb.setVisibility(View.GONE);
+        reviewsList.setVisibility(View.VISIBLE);
+        emptyLayout.setVisibility(View.GONE);
+    }
+
+    private void showEmpty() {
+        loadingPb.setVisibility(View.GONE);
+        reviewsList.setVisibility(View.GONE);
+        emptyLayout.setVisibility(View.VISIBLE);
     }
 
     public interface OnReviewsFragmentListener {

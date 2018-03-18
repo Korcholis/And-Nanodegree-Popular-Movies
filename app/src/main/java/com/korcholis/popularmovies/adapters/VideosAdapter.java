@@ -1,6 +1,8 @@
 package com.korcholis.popularmovies.adapters;
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -40,12 +42,14 @@ public class VideosAdapter extends RecyclerView.Adapter<VideosAdapter.VideoViewH
 
     @Override
     public void onBindViewHolder(VideoViewHolder holder, int position) {
-        Video video = videos.get(position);
+        final Video video = videos.get(position);
         holder.name.setText(video.getName());
+        holder.type.setText(video.getSite());
         holder.playBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                Intent lVideoIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.youtube.com/embed/" + video.getKey()));
+                context.startActivity(lVideoIntent);
             }
         });
     }
@@ -59,6 +63,8 @@ public class VideosAdapter extends RecyclerView.Adapter<VideosAdapter.VideoViewH
 
         @BindView(R.id.name)
         TextView name;
+        @BindView(R.id.type)
+        TextView type;
         @BindView(R.id.playBtn)
         FloatingActionButton playBtn;
 

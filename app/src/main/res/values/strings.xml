@@ -10,6 +10,7 @@
     <string name="movie_rating_out_of">%1$s/10</string>
     <string name="sub_highest_rated">Highest rated movies</string>
     <string name="sub_popular">Most popular movies</string>
+    <string name="sub_fav">Favorite movies</string>
     <string name="menu_refresh">Refresh</string>
     <string name="menu_sort">Sort by…</string>
     <string name="menu_sort_highest_rated">Sort by rating</string>
@@ -20,4 +21,6 @@
     <string name="page_details">Details</string>
     <string name="page_videos">Videos</string>
     <string name="page_reviews">Reviews</string>
+    <string name="no_reviews">There are no reviews for this movie</string>
+    <string name="no_videos">There are no videos for this movie</string>
 </resources>

@@ -10,6 +10,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 
 import com.korcholis.popularmovies.R;
 import com.korcholis.popularmovies.adapters.VideosAdapter;
@@ -41,6 +42,10 @@ public class VideosFragment extends Fragment {
     private static final String ARG_MOVIE_ID = "param1";
     @BindView(R.id.list)
     RecyclerView videosList;
+    @BindView(R.id.empty_layout)
+    View emptyLayout;
+    @BindView(R.id.loadingPb)
+    ProgressBar loadingPb;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
     private int movieId;
     private OnVideosFragmentListener mListener;
@@ -70,7 +75,7 @@ public class VideosFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_list, container, false);
+        View view = inflater.inflate(R.layout.fragment_videos_list, container, false);
         ButterKnife.bind(this, view);
         return view;
     }
@@ -98,7 +103,7 @@ public class VideosFragment extends Fragment {
 
         adapter = new VideosAdapter(getContext());
         videosList.setAdapter(adapter);
-
+        showLoading();
         compositeDisposable.add(
                 TMDbApi.instance(getContext()).videosForMovie(movieId)
                         .subscribeOn(Schedulers.io())
@@ -119,9 +124,10 @@ public class VideosFragment extends Fragment {
                                     }
                                 } else {
                                     adapter.swapContent(videos);
-
                                     if (videos.isEmpty()) {
+                                        showEmpty();
                                     } else {
+                                        showList();
                                     }
                                 }
                             }
@@ -149,5 +155,23 @@ public class VideosFragment extends Fragment {
 
     public interface OnVideosFragmentListener {
         void onVideosInteraction(Uri uri);
+    }
+
+    private void showLoading() {
+        loadingPb.setVisibility(View.VISIBLE);
+        videosList.setVisibility(View.GONE);
+        emptyLayout.setVisibility(View.GONE);
+    }
+
+    private void showList() {
+        loadingPb.setVisibility(View.GONE);
+        videosList.setVisibility(View.VISIBLE);
+        emptyLayout.setVisibility(View.GONE);
+    }
+
+    private void showEmpty() {
+        loadingPb.setVisibility(View.GONE);
+        videosList.setVisibility(View.GONE);
+        emptyLayout.setVisibility(View.VISIBLE);
     }
 }

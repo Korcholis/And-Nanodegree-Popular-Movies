@@ -1,6 +1,9 @@
 package com.korcholis.popularmovies;
 
+import android.content.ContentResolver;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -12,24 +15,30 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.korcholis.popularmovies.adapters.MoviesAdapter;
+import com.korcholis.popularmovies.data.PopDBContract;
+import com.korcholis.popularmovies.data.PopDBHelper;
+import com.korcholis.popularmovies.data.TMDbApi;
 import com.korcholis.popularmovies.exceptions.ConnectionNotAvailableException;
 import com.korcholis.popularmovies.models.Movie;
 import com.korcholis.popularmovies.models.MoviesList;
 import com.korcholis.popularmovies.utils.ConnectionChecker;
 import com.korcholis.popularmovies.utils.Constants;
 import com.korcholis.popularmovies.utils.MoviesActivity;
-import com.korcholis.popularmovies.adapters.MoviesAdapter;
-import com.korcholis.popularmovies.data.TMDbApi;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 
 @SuppressWarnings("WeakerAccess")
@@ -49,6 +58,16 @@ public class ListActivity extends MoviesActivity {
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     private TMDbApi.SortCriteria chosenSortCriteria = TMDbApi.SortCriteria.MostPopular;
+
+    final Observable<List<Movie>> favsObservable = Observable.create(new ObservableOnSubscribe<List<Movie>>() {
+        @Override
+        public void subscribe(ObservableEmitter<List<Movie>> emitter) {
+            ContentResolver resolver = getContentResolver();
+            Cursor cursor = resolver.query(PopDBContract.FavEntry.CONTENT_URI, null, null, null, null);
+            emitter.onNext(PopDBHelper.cursorToMovies(cursor));
+            emitter.onComplete();
+        }
+    });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,49 +108,96 @@ public class ListActivity extends MoviesActivity {
             case MostPopular:
                 getSupportActionBar().setTitle(R.string.sub_popular);
                 break;
+            case Favs:
+                getSupportActionBar().setTitle(R.string.sub_fav);
+                break;
         }
 
         showProgress();
         compositeDisposable.clear();
-        compositeDisposable.add(
-                TMDbApi.instance(this).movieList(chosenSortCriteria)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .map(new Function< MoviesList, List<Movie>>() {
 
-                            @Override
-                            public List<Movie> apply(MoviesList moviesList) {
-                                return moviesList.getResults();
-                            }
-                        })
-                        .subscribe(new Consumer<List<Movie>>() {
-                            @Override
-                            public void accept(List<Movie> movies) {
-                                if (movies == null) {
-                                    if (!ConnectionChecker.isNetworkAvailable(ListActivity.this)) {
-                                        showNoConnectionErrorToast(false);
-                                    } else {
-                                        showMovieListErrorToast(false);
+        switch (chosenSortCriteria) {
+            case HighRated:
+            case MostPopular:
+
+                compositeDisposable.add(
+                        TMDbApi.instance(this).movieList(chosenSortCriteria)
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .map(new Function<MoviesList, List<Movie>>() {
+
+                                    @Override
+                                    public List<Movie> apply(MoviesList moviesList) {
+                                        return moviesList.getResults();
                                     }
-                                } else {
-                                    adapter.swapContent(movies);
-                                    if (movies.isEmpty()) {
-                                        showErrorView(R.string.error_movies_wrong_data);
-                                    } else {
-                                        showList();
+                                })
+                                .subscribe(new Consumer<List<Movie>>() {
+                                    @Override
+                                    public void accept(List<Movie> movies) {
+                                        if (movies == null) {
+                                            if (!ConnectionChecker.isNetworkAvailable(ListActivity.this)) {
+                                                showNoConnectionErrorToast(false);
+                                            } else {
+                                                showMovieListErrorToast(false);
+                                            }
+                                        } else {
+                                            adapter.swapContent(movies);
+                                            if (movies.isEmpty()) {
+                                                showErrorView(R.string.error_movies_wrong_data);
+                                            } else {
+                                                showList();
+                                            }
+                                        }
                                     }
-                                }
-                            }
-                        }, new Consumer<Throwable>() {
-                            @Override
-                            public void accept(Throwable throwable) {
-                                if (throwable instanceof ConnectionNotAvailableException) {
-                                    showErrorView(R.string.error_no_connection);
-                                } else {
-                                    showErrorView(R.string.error_movies_wrong_data);
-                                }
-                            }
-                        }));
+                                }, new Consumer<Throwable>() {
+                                    @Override
+                                    public void accept(Throwable throwable) {
+                                        if (throwable instanceof ConnectionNotAvailableException) {
+                                            showErrorView(R.string.error_no_connection);
+                                        } else {
+                                            showErrorView(R.string.error_movies_wrong_data);
+                                        }
+                                    }
+                                }));
+
+                break;
+
+            case Favs:
+                compositeDisposable.add(
+                        favsObservable
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(new Consumer<List<Movie>>() {
+                                    @Override
+                                    public void accept(List<Movie> movies) {
+                                        if (movies == null) {
+                                            if (!ConnectionChecker.isNetworkAvailable(ListActivity.this)) {
+                                                showNoConnectionErrorToast(false);
+                                            } else {
+                                                showMovieListErrorToast(false);
+                                            }
+                                        } else {
+                                            adapter.swapContent(movies);
+                                            if (movies.isEmpty()) {
+                                                showErrorView(R.string.error_movies_wrong_data);
+                                            } else {
+                                                showList();
+                                            }
+                                        }
+                                    }
+                                }, new Consumer<Throwable>() {
+                                    @Override
+                                    public void accept(Throwable throwable) {
+                                        if (throwable instanceof ConnectionNotAvailableException) {
+                                            showErrorView(R.string.error_no_connection);
+                                        } else {
+                                            showErrorView(R.string.error_movies_wrong_data);
+                                        }
+                                    }
+                                })
+                );
+                break;
+        }
     }
 
     @Override
@@ -155,6 +221,10 @@ public class ListActivity extends MoviesActivity {
                 return true;
             case R.id.sortPopularity:
                 chosenSortCriteria = TMDbApi.SortCriteria.MostPopular;
+                loadMovies();
+                return true;
+            case R.id.showFavs:
+                chosenSortCriteria = TMDbApi.SortCriteria.Favs;
                 loadMovies();
                 return true;
         }

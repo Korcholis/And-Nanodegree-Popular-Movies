@@ -43,7 +43,8 @@ public class TMDbApi {
 
     public enum SortCriteria {
         MostPopular("popular"),
-        HighRated("top_rated");
+        HighRated("top_rated"),
+        Favs("favs");
 
         private final String value;
 

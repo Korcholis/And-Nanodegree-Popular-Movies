@@ -30,8 +30,19 @@ public class Movie implements Serializable {
         this.voteAverage = voteAverage;
     }
 
+    public Movie(Integer id, String title, String poster) {
+        this.id = id;
+        this.title = title;
+        this.poster = poster;
+
+    }
+
     public String getPoster() {
-        return TMDB_IMAGE_URL + poster;
+        return getPoster(false);
+    }
+
+    public String getPoster(boolean relativePath) {
+        return (relativePath? "" : TMDB_IMAGE_URL) + poster;
     }
 
     public void setPoster(String poster) {
