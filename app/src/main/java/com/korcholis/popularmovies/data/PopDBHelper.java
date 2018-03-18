@@ -36,15 +36,6 @@ public class PopDBHelper extends SQLiteOpenHelper {
         return favs;
     }
 
-    public static long addFav(int movieId, String title, String poster, SQLiteDatabase db) {
-        ContentValues cv = new ContentValues();
-        cv.put(PopDBContract.FavEntry.COLUMN_MOVIE_ID, movieId);
-        cv.put(PopDBContract.FavEntry.COLUMN_TITLE, title);
-        cv.put(PopDBContract.FavEntry.COLUMN_POSTER, poster);
-
-        return db.insert(PopDBContract.FavEntry.TABLE_NAME, null, cv);
-    }
-
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
         final String SQL_CREATE_FAVS_TABLE = "CREATE TABLE " +
