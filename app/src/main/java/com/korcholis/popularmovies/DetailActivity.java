@@ -1,10 +1,5 @@
 package com.korcholis.popularmovies;
 
-import android.content.ContentResolver;
-import android.content.ContentUris;
-import android.content.ContentValues;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -21,10 +16,7 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import com.github.zagum.switchicon.SwitchIconView;
-import com.korcholis.popularmovies.data.PopDBContract;
-import com.korcholis.popularmovies.data.PopDBHelper;
-import com.korcholis.popularmovies.data.TMDbApi;
-import com.korcholis.popularmovies.exceptions.ConnectionNotAvailableException;
+import com.korcholis.popularmovies.data.DataCalls;
 import com.korcholis.popularmovies.fragments.OverviewFragment;
 import com.korcholis.popularmovies.fragments.ReviewsFragment;
 import com.korcholis.popularmovies.fragments.VideosFragment;
@@ -35,8 +27,6 @@ import com.korcholis.popularmovies.utils.MoviesActivity;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Consumer;
@@ -57,37 +47,7 @@ public class DetailActivity extends MoviesActivity implements OverviewFragment.O
     ViewPager pager;
 
     private Movie movie;
-    final Observable<Void> setFavObservable = Observable.create(new ObservableOnSubscribe<Void>() {
-        @Override
-        public void subscribe(ObservableEmitter<Void> emitter) {
-            ContentValues cv = new ContentValues();
-            cv.put(PopDBContract.FavEntry.COLUMN_MOVIE_ID, movie.getId());
-            cv.put(PopDBContract.FavEntry.COLUMN_TITLE, movie.getTitle());
-            cv.put(PopDBContract.FavEntry.COLUMN_POSTER, movie.getPoster(true));
-            ContentResolver resolver = getContentResolver();
-            resolver.insert(PopDBContract.FavEntry.CONTENT_URI, cv);
-
-            emitter.onComplete();
-        }
-    });
-    final Observable<Void> unsetFavObservable = Observable.create(new ObservableOnSubscribe<Void>() {
-        @Override
-        public void subscribe(ObservableEmitter<Void> emitter) {
-            ContentResolver resolver = getContentResolver();
-            resolver.delete(ContentUris.withAppendedId(PopDBContract.FavEntry.CONTENT_URI, movieId), null, null);
-            emitter.onComplete();
-        }
-    });
     private int movieId;
-    final Observable<Boolean> getFavObservable = Observable.create(new ObservableOnSubscribe<Boolean>() {
-        @Override
-        public void subscribe(ObservableEmitter<Boolean> emitter) {
-            ContentResolver resolver = getContentResolver();
-            Cursor cursor = resolver.query(ContentUris.withAppendedId(PopDBContract.FavEntry.CONTENT_URI, movieId), null, null, null, null);
-            emitter.onNext(cursor.getCount() > 0);
-            emitter.onComplete();
-        }
-    });
     private ScreensAdapter screensAdapter;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
     private MenuItem prevMenuItem;
@@ -115,27 +75,15 @@ public class DetailActivity extends MoviesActivity implements OverviewFragment.O
         loadingPb.setVisibility(View.VISIBLE);
 
         compositeDisposable.add(
-                TMDbApi.instance(this).movie(movieId)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(new Consumer<Movie>() {
-                            @Override
-                            public void accept(Movie fetchedMovie) {
-                                movie = fetchedMovie;
-                                screensAdapter = new ScreensAdapter(getSupportFragmentManager(), movie);
-                                pager.setAdapter(screensAdapter);
-                                loadingPb.setVisibility(View.GONE);
-                            }
-                        }, new Consumer<Throwable>() {
-                            @Override
-                            public void accept(Throwable throwable) {
-                                if (throwable instanceof ConnectionNotAvailableException) {
-                                    showNoConnectionErrorToast(true);
-                                } else {
-                                    showMovieErrorToast(true);
-                                }
-                            }
-                        }));
+                DataCalls.getMovie(movieId, getContentResolver()).observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.computation()).subscribe(new Consumer<Movie>() {
+                    @Override
+                    public void accept(Movie fetchedMovie) {
+                        movie = fetchedMovie;
+                        screensAdapter = new ScreensAdapter(getSupportFragmentManager(), movie);
+                        pager.setAdapter(screensAdapter);
+                        loadingPb.setVisibility(View.GONE);
+                    }
+                }));
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
@@ -158,7 +106,6 @@ public class DetailActivity extends MoviesActivity implements OverviewFragment.O
                         getSupportActionBar().setSubtitle(R.string.page_reviews);
                         break;
                 }
-
 
                 if (prevMenuItem != null) {
                     prevMenuItem.setChecked(false);
@@ -210,26 +157,13 @@ public class DetailActivity extends MoviesActivity implements OverviewFragment.O
         inflater.inflate(R.menu.menu_content, menu);
 
         favBtn = menu.findItem(R.id.fav_switch_layout).getActionView().findViewById(R.id.fav_btn);
-        compositeDisposable.add(
-                getFavObservable
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(new Consumer<Boolean>() {
-                            @Override
-                            public void accept(Boolean isFav) {
-                                favBtn.setIconEnabled(isFav);
-                            }
-                        }, new Consumer<Throwable>() {
-                            @Override
-                            public void accept(Throwable throwable) {
-                                if (throwable instanceof ConnectionNotAvailableException) {
-                                    showNoConnectionErrorToast(true);
-                                } else {
-                                    showMovieErrorToast(true);
-                                }
-                            }
-                        }));
 
+        DataCalls.getMovie(movieId, getContentResolver()).observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.computation()).subscribe(new Consumer<Movie>() {
+            @Override
+            public void accept(Movie fetchedMovie) {
+                favBtn.setIconEnabled(movie.isFavorite());
+            }
+        });
 
         favBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -237,20 +171,20 @@ public class DetailActivity extends MoviesActivity implements OverviewFragment.O
                 final boolean willBeFaved = !favBtn.isIconEnabled();
                 favBtn.switchState();
 
-                Observable<Void> observableToUse;
+                Observable<Boolean> observableToUse;
                 if (willBeFaved) {
-                    observableToUse = setFavObservable;
+                    observableToUse = DataCalls.setMovieAsFavorite(movie, getContentResolver());
                 } else {
-                    observableToUse = unsetFavObservable;
+                    observableToUse = DataCalls.unsetMovieAsFavorite(movie, getContentResolver());
                 }
 
                 compositeDisposable.add(
                         observableToUse
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(new Consumer<Void>() {
+                                .subscribe(new Consumer<Boolean>() {
                                     @Override
-                                    public void accept(Void aVoid) throws Exception {
+                                    public void accept(Boolean isOk) throws Exception {
 
                                     }
                                 }, new Consumer<Throwable>() {

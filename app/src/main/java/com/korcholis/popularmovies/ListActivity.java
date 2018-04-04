@@ -1,9 +1,6 @@
 package com.korcholis.popularmovies;
 
-import android.content.ContentResolver;
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -14,10 +11,10 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.korcholis.popularmovies.adapters.MoviesAdapter;
-import com.korcholis.popularmovies.data.PopDBContract;
-import com.korcholis.popularmovies.data.PopDBHelper;
+import com.korcholis.popularmovies.data.DataCalls;
 import com.korcholis.popularmovies.data.TMDbApi;
 import com.korcholis.popularmovies.exceptions.ConnectionNotAvailableException;
 import com.korcholis.popularmovies.models.Movie;
@@ -31,14 +28,10 @@ import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
-import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 
 @SuppressWarnings("WeakerAccess")
@@ -54,20 +47,8 @@ public class ListActivity extends MoviesActivity {
     @BindView(R.id.toolbar)
     Toolbar toolbar;
     private MoviesAdapter adapter;
-
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
-
     private TMDbApi.SortCriteria chosenSortCriteria = TMDbApi.SortCriteria.MostPopular;
-
-    final Observable<List<Movie>> favsObservable = Observable.create(new ObservableOnSubscribe<List<Movie>>() {
-        @Override
-        public void subscribe(ObservableEmitter<List<Movie>> emitter) {
-            ContentResolver resolver = getContentResolver();
-            Cursor cursor = resolver.query(PopDBContract.FavEntry.CONTENT_URI, null, null, null, null);
-            emitter.onNext(PopDBHelper.cursorToMovies(cursor));
-            emitter.onComplete();
-        }
-    });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -128,7 +109,44 @@ public class ListActivity extends MoviesActivity {
 
                                     @Override
                                     public List<Movie> apply(MoviesList moviesList) {
-                                        return moviesList.getResults();
+                                        List<Movie> movies = moviesList.getResults();
+
+
+                                        return movies;
+                                    }
+                                })
+                                .doOnSuccess(new Consumer<List<Movie>>() {
+                                    @Override
+                                    public void accept(final List<Movie> movies) {
+                                        compositeDisposable.add(
+                                                DataCalls.unsetCriteriaToAllMovies(chosenSortCriteria, getContentResolver())
+                                                        .subscribeOn(Schedulers.computation()).subscribe(new Consumer<Boolean>() {
+                                                    @Override
+                                                    public void accept(Boolean isOk) {
+                                                        for (final Movie movie : movies) {
+                                                            compositeDisposable.add(
+                                                                    DataCalls.insertMovie(movie, getContentResolver())
+                                                                            .subscribeOn(Schedulers.computation()).subscribe(new Consumer<Boolean>() {
+                                                                        @Override
+                                                                        public void accept(Boolean isOk) {
+                                                                            compositeDisposable.add(DataCalls.setCriteriaToMovie(movie, chosenSortCriteria, getContentResolver()).subscribeOn(Schedulers.computation()).subscribe());
+                                                                        }
+                                                                    }));
+                                                        }
+                                                    }
+                                                }));
+
+
+                                        for (final Movie movie : movies) {
+
+                                        }
+
+                                    }
+                                })
+                                .doOnError(new Consumer<Throwable>() {
+                                    @Override
+                                    public void accept(Throwable throwable) {
+                                        Toast.makeText(ListActivity.this, "Data not available", Toast.LENGTH_SHORT).show();
                                     }
                                 })
                                 .subscribe(new Consumer<List<Movie>>() {
@@ -137,6 +155,7 @@ public class ListActivity extends MoviesActivity {
                                         if (movies == null) {
                                             if (!ConnectionChecker.isNetworkAvailable(ListActivity.this)) {
                                                 showNoConnectionErrorToast(false);
+                                                Toast.makeText(ListActivity.this, "No network", Toast.LENGTH_SHORT).show();
                                             } else {
                                                 showMovieListErrorToast(false);
                                             }
@@ -164,7 +183,7 @@ public class ListActivity extends MoviesActivity {
 
             case Favs:
                 compositeDisposable.add(
-                        favsObservable
+                        DataCalls.listFavorites(getContentResolver())
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
                                 .subscribe(new Consumer<List<Movie>>() {

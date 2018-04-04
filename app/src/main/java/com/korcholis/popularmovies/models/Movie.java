@@ -20,6 +20,10 @@ public class Movie implements Serializable {
     @SerializedName("vote_average")
     private Double voteAverage;
 
+    private boolean isFavorite;
+    private boolean isPopular;
+    private boolean isHighRated;
+
     public Movie(String poster, String overview, String releaseDate, Integer id,
                  String title, Double voteAverage) {
         this.poster = poster;
@@ -87,5 +91,29 @@ public class Movie implements Serializable {
 
     public void setVoteAverage(Double voteAverage) {
         this.voteAverage = voteAverage;
+    }
+
+    public boolean isFavorite() {
+        return isFavorite;
+    }
+
+    public void setFavorite(boolean favorite) {
+        isFavorite = favorite;
+    }
+
+    public boolean isPopular() {
+        return isPopular;
+    }
+
+    public void setPopular(boolean popular) {
+        isPopular = popular;
+    }
+
+    public boolean isHighRated() {
+        return isHighRated;
+    }
+
+    public void setHighRated(boolean highRated) {
+        isHighRated = highRated;
     }
 }

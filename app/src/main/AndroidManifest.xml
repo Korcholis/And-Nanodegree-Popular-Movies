@@ -36,7 +36,7 @@
         </activity>
 
         <provider
-            android:name="com.korcholis.popularmovies.data.FavProvider"
+            android:name="com.korcholis.popularmovies.data.MovieProvider"
             android:authorities="com.korcholis.popularmovies"
             android:exported="false" />
     </application>
