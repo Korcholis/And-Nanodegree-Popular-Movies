@@ -48,4 +48,28 @@
             android:textAlignment="center" />
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/noFavsView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:src="@drawable/empty_favs" />
+
+        <TextView
+            android:id="@+id/noFavsTv"
+            style="@style/TextAppearance.AppCompat.Large"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/regular_margin"
+            android:text="@string/error_empty_favs"
+            android:textAlignment="center" />
+    </LinearLayout>
+
 </FrameLayout>

@@ -21,7 +21,9 @@ public class DataCalls {
             @Override
             public List<Movie> call() {
                 Cursor cursor = resolver.query(PopDBContract.MovieEntry.CONTENT_URI.buildUpon().appendPath(PopDBContract.PATH_FAVORITE).build(), null, null, null, null);
-                return PopDBHelper.cursorToMovies(cursor);
+                List<Movie> movies = PopDBHelper.cursorToMovies(cursor);
+                cursor.close();
+                return movies;
             }
         });
 
@@ -69,7 +71,9 @@ public class DataCalls {
                 if (count == 0) {
                     throw new SQLException("The movie with id " + movieId + " is not saved");
                 }
-                return PopDBHelper.cursorToMovies(cursor).get(0);
+                Movie movie = PopDBHelper.cursorToMovies(cursor).get(0);
+                cursor.close();
+                return movie;
             }
         });
 
@@ -104,8 +108,9 @@ public class DataCalls {
 
             @Override
             public Boolean call() {
-                resolver.delete(PopDBContract.MovieEntry.CONTENT_URI.buildUpon()
-                        .appendPath(chosenSortCriteria.toString()).build(), null, null);
+                resolver.delete(
+                        PopDBContract.MovieEntry.CONTENT_URI.buildUpon()
+                                .appendPath(chosenSortCriteria.toString()).build(), null, null);
                 return true;
             }
         });
@@ -114,7 +119,7 @@ public class DataCalls {
     }
 
     public static Observable<Boolean> setCriteriaToMovie(@NonNull final Movie movie, @NonNull final TMDbApi.SortCriteria chosenSortCriteria, @NonNull final ContentResolver resolver) {
-        Observable<Boolean> observable = Observable.fromCallable(new Callable<Boolean>() {
+        final Observable<Boolean> observable = Observable.fromCallable(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 resolver.insert(
@@ -122,6 +127,20 @@ public class DataCalls {
                                 .appendPath(movie.getId().toString())
                                 .appendPath(chosenSortCriteria.toString()).build(), null);
                 return true;
+            }
+        });
+
+        return observable;
+    }
+
+    public static Observable<List<Movie>> getMoviesByCriteria(@NonNull final TMDbApi.SortCriteria chosenSortCriteria, @NonNull final ContentResolver resolver) {
+        final Observable<List<Movie>> observable = Observable.fromCallable(new Callable<List<Movie>>() {
+            @Override
+            public List<Movie> call() {
+                Cursor cursor = resolver.query(PopDBContract.MovieEntry.CONTENT_URI.buildUpon().appendPath(chosenSortCriteria.toString()).build(), null, null, null, null);
+                List<Movie> movies = PopDBHelper.cursorToMovies(cursor);
+                cursor.close();
+                return movies;
             }
         });
 

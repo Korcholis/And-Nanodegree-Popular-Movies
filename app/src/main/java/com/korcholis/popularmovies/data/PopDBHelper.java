@@ -14,7 +14,7 @@ import java.util.List;
 public class PopDBHelper extends SQLiteOpenHelper {
 
     public static final String DB_NAME = "popmovies.db";
-    public static final int DB_VERSION = 2;
+    public static final int DB_VERSION = 1;
 
     public PopDBHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -23,21 +23,23 @@ public class PopDBHelper extends SQLiteOpenHelper {
     @NonNull
     public static List<Movie> cursorToMovies(Cursor cursor) {
         List<Movie> movies = new ArrayList<>();
-        cursor.moveToFirst();
-        do {
-            Movie movie = new Movie(
-                    cursor.getString(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_POSTER)),
-                    cursor.getString(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_SYNOPSIS)),
-                    cursor.getString(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_RELEASE_DATE)),
-                    cursor.getInt(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_MOVIE_ID)),
-                    cursor.getString(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_TITLE)),
-                    cursor.getDouble(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_AVG_VOTE))
-            );
-            movie.setFavorite(cursor.getInt(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_IS_FAVORITE)) == 1);
-            movie.setPopular(cursor.getInt(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_IS_POPULAR)) == 1);
-            movie.setHighRated(cursor.getInt(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_IS_HIGH_RATED)) == 1);
-            movies.add(movie);
-        } while (cursor.moveToNext());
+        if (cursor.moveToFirst()) {
+            while(!cursor.isAfterLast()) {
+                Movie movie = new Movie(
+                        cursor.getString(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_POSTER)),
+                        cursor.getString(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_SYNOPSIS)),
+                        cursor.getString(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_RELEASE_DATE)),
+                        cursor.getInt(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_MOVIE_ID)),
+                        cursor.getString(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_TITLE)),
+                        cursor.getDouble(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_AVG_VOTE))
+                );
+                movie.setFavorite(cursor.getInt(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_IS_FAVORITE)) == 1);
+                movie.setPopular(cursor.getInt(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_IS_POPULAR)) == 1);
+                movie.setHighRated(cursor.getInt(cursor.getColumnIndex(PopDBContract.MovieEntry.COLUMN_IS_HIGH_RATED)) == 1);
+                movies.add(movie);
+                cursor.moveToNext();
+            }
+        }
 
         return movies;
     }

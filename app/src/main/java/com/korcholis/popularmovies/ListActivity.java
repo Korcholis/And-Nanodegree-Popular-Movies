@@ -2,6 +2,7 @@ package com.korcholis.popularmovies;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -42,6 +43,8 @@ public class ListActivity extends MoviesActivity {
     ProgressBar loadingPb;
     @BindView(R.id.errorView)
     LinearLayout errorView;
+    @BindView(R.id.noFavsView)
+    LinearLayout noFavsView;
     @BindView(R.id.errorTv)
     TextView errorTv;
     @BindView(R.id.toolbar)
@@ -49,6 +52,8 @@ public class ListActivity extends MoviesActivity {
     private MoviesAdapter adapter;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
     private TMDbApi.SortCriteria chosenSortCriteria = TMDbApi.SortCriteria.MostPopular;
+
+    private Snackbar noConnSB;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,10 +83,18 @@ public class ListActivity extends MoviesActivity {
             chosenSortCriteria = TMDbApi.SortCriteria.valueOf(savedInstanceState.getString("chosenSortCriteria"));
         }
 
+        noConnSB = Snackbar.make(movieListRv, R.string.error_no_connection_sb, Snackbar.LENGTH_INDEFINITE).setAction(R.string.try_reloading, new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                loadMovies();
+            }
+        });
+
         loadMovies();
     }
 
     protected void loadMovies() {
+        noConnSB.dismiss();
         switch (chosenSortCriteria) {
             case HighRated:
                 getSupportActionBar().setTitle(R.string.sub_highest_rated);
@@ -110,8 +123,6 @@ public class ListActivity extends MoviesActivity {
                                     @Override
                                     public List<Movie> apply(MoviesList moviesList) {
                                         List<Movie> movies = moviesList.getResults();
-
-
                                         return movies;
                                     }
                                 })
@@ -135,40 +146,20 @@ public class ListActivity extends MoviesActivity {
                                                         }
                                                     }
                                                 }));
-
-
-                                        for (final Movie movie : movies) {
-
-                                        }
-
                                     }
                                 })
                                 .doOnError(new Consumer<Throwable>() {
                                     @Override
                                     public void accept(Throwable throwable) {
-                                        Toast.makeText(ListActivity.this, "Data not available", Toast.LENGTH_SHORT).show();
+                                        DataCalls.getMoviesByCriteria(chosenSortCriteria, getContentResolver())
+                                                .subscribeOn(Schedulers.io())
+                                                .observeOn(AndroidSchedulers.mainThread())
+                                                .subscribe(onMoviesListLoaded());
+
+                                        noConnSB.show();
                                     }
                                 })
-                                .subscribe(new Consumer<List<Movie>>() {
-                                    @Override
-                                    public void accept(List<Movie> movies) {
-                                        if (movies == null) {
-                                            if (!ConnectionChecker.isNetworkAvailable(ListActivity.this)) {
-                                                showNoConnectionErrorToast(false);
-                                                Toast.makeText(ListActivity.this, "No network", Toast.LENGTH_SHORT).show();
-                                            } else {
-                                                showMovieListErrorToast(false);
-                                            }
-                                        } else {
-                                            adapter.swapContent(movies);
-                                            if (movies.isEmpty()) {
-                                                showErrorView(R.string.error_movies_wrong_data);
-                                            } else {
-                                                showList();
-                                            }
-                                        }
-                                    }
-                                }, new Consumer<Throwable>() {
+                                .subscribe(onMoviesListLoaded(), new Consumer<Throwable>() {
                                     @Override
                                     public void accept(Throwable throwable) {
                                         if (throwable instanceof ConnectionNotAvailableException) {
@@ -198,7 +189,7 @@ public class ListActivity extends MoviesActivity {
                                         } else {
                                             adapter.swapContent(movies);
                                             if (movies.isEmpty()) {
-                                                showErrorView(R.string.error_movies_wrong_data);
+                                                showEmptyFavsView();
                                             } else {
                                                 showList();
                                             }
@@ -267,12 +258,14 @@ public class ListActivity extends MoviesActivity {
         movieListRv.setVisibility(View.VISIBLE);
         loadingPb.setVisibility(View.GONE);
         errorView.setVisibility(View.GONE);
+        noFavsView.setVisibility(View.GONE);
     }
 
     private void showProgress() {
         movieListRv.setVisibility(View.GONE);
         loadingPb.setVisibility(View.VISIBLE);
         errorView.setVisibility(View.GONE);
+        noFavsView.setVisibility(View.GONE);
     }
 
     private void showErrorView(int errorMessageId) {
@@ -280,5 +273,40 @@ public class ListActivity extends MoviesActivity {
         loadingPb.setVisibility(View.GONE);
         errorView.setVisibility(View.VISIBLE);
         errorTv.setText(errorMessageId);
+        noFavsView.setVisibility(View.GONE);
+    }
+
+    private void showEmptyFavsView() {
+        movieListRv.setVisibility(View.GONE);
+        loadingPb.setVisibility(View.GONE);
+        errorView.setVisibility(View.GONE);
+        noFavsView.setVisibility(View.VISIBLE);
+    }
+
+    private Consumer<List<Movie>> onMoviesListLoaded() {
+        return new Consumer<List<Movie>>() {
+            @Override
+            public void accept(List<Movie> movies) {
+                if (movies == null) {
+                    if (!ConnectionChecker.isNetworkAvailable(ListActivity.this)) {
+                        showNoConnectionErrorToast(false);
+                        Toast.makeText(ListActivity.this, "No network", Toast.LENGTH_SHORT).show();
+                    } else {
+                        showMovieListErrorToast(false);
+                    }
+                } else {
+                    adapter.swapContent(movies);
+                    if (movies.isEmpty()) {
+                        if (!ConnectionChecker.isNetworkAvailable(ListActivity.this)) {
+                            showErrorView(R.string.error_no_connection);
+                        } else {
+                            showErrorView(R.string.error_movies_wrong_data);
+                        }
+                    } else {
+                        showList();
+                    }
+                }
+            }
+        };
     }
 }
