@@ -115,7 +115,7 @@ public class ListActivity extends MoviesActivity {
             case MostPopular:
 
                 compositeDisposable.add(
-                        TMDbApi.instance(this).movieList(chosenSortCriteria)
+                        TMDbApi.instance(getApplicationContext()).movieList(chosenSortCriteria)
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
                                 .map(new Function<MoviesList, List<Movie>>() {
