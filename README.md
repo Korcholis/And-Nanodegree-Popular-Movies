@@ -21,6 +21,7 @@ The project uses a variety of libraries:
 - **ButterKnife**: To use the layout items in a quicker fashion.
 - **LeakCanary**: To check for any critical memory leak.
 - **Palette + PicassoPalette**: To show up colors based on each poster.
+- **SwitchIcon**: To make the Fav button.
 
 ## Tutorials
 
