@@ -44,7 +44,6 @@ public class VideosAdapter extends RecyclerView.Adapter<VideosAdapter.VideoViewH
     public void onBindViewHolder(VideoViewHolder holder, int position) {
         final Video video = videos.get(position);
         holder.name.setText(video.getName());
-        holder.type.setText(video.getSite());
         holder.playBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -63,8 +62,6 @@ public class VideosAdapter extends RecyclerView.Adapter<VideosAdapter.VideoViewH
 
         @BindView(R.id.name)
         TextView name;
-        @BindView(R.id.type)
-        TextView type;
         @BindView(R.id.playBtn)
         FloatingActionButton playBtn;
 
